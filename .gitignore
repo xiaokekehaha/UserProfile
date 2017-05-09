@@ -1,0 +1,10 @@
+/*
+!.gitignore
+!build.sbt
+!src/
+!bin/
+!conf/
+!lib/
+!scp.sh
+!scalastyle-config.xml
+!data/
