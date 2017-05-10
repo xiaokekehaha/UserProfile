@@ -25,6 +25,8 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.graphx.Graph
 import org.apache.spark.sql.{Row, SparkSession}
 import org.paukov.combinatorics.Factory
+import org.json4s.JsonDSL._
+import org.json4s.native.JsonMethods._
 
 import scala.collection.JavaConverters._
 
@@ -50,7 +52,7 @@ object Up2Hive {
     val hiveData = spark.sql("select lenovoid,cs_customerid,microblogid,wechatid,mobile_md5,email,unique_cookie,imei_num from lenovo_user_gain_data_rel").map {
       case Row(lenovoid: String, cs_customerid: String, microblogid: String
       , wechatid: String, mobile_md5: String, email: String, unique_cookie: String
-      , imei_num) => (lenovoid, cs_customerid, microblogid, wechatid, mobile_md5, email, unique_cookie, imei_num)
+      , imei_num: String) => (lenovoid, cs_customerid, microblogid, wechatid, mobile_md5, email, unique_cookie, imei_num)
     }.rdd
 
     val data = hiveData
@@ -74,44 +76,62 @@ object Up2Hive {
         true
     })
 
-    //    println(data.collect.mkString("\n"))
-
     val dic = data.flatMap(x => List(x._1, x._2)).zipWithUniqueId()
 
     val rowEdges = data.join(dic).map(_._2).join(dic).map(_._2)
 
-    //    val rowEdges = tmp.map( x => (x._2._1,x._1))
-    //      .groupByKey()
-    //      .map( x => {
-    //        val itr = x._2.toList
-    //        if(itr.size == 1){
-    //          (itr(0).asInstanceOf[VertexId],itr(0).asInstanceOf[VertexId])
-    //        } else {
-    //          (itr(0).asInstanceOf[VertexId],itr(1).asInstanceOf[VertexId])
-    //        }
-    //      })
-    //
     val graph = Graph.fromEdgeTuples(rowEdges, 1)
-    //
+
     val cc = graph.connectedComponents().vertices
 
     val ccByUsername = dic.map(_.swap).join(cc).map {
       case (id, (username, cc)) => (username, cc)
     }
-    //
+
     val rr = ccByUsername.map(x => (x._2, x._1)).groupByKey().map(x => {
-
       val id = x._1
-      val mes = x._2.toList.distinct.mkString("|")
-      val sortKey = x._2.size
+      val mes = x._2.toList.distinct
+      (id, toJson(mes))
+    })
 
-      (sortKey, (id, mes))
-    }).sortByKey(false)
+    // Todo: Save???
 
-    // scalastyle:off
-    println(rr.map(_._2).collect().mkString("\n"))
+  }
 
+  def toJson(list: List[String]): String = {
 
+    val groupList = list.map(x => {
+      val tup = x.split(":")
+      val id = tup(0)
+      val value = tup(1)
+      (id, value)
+    }).groupBy(_._1).map(x => {
+      val key = x._1
+      val value = x._2.map(_._2)
+      (key, value)
+    })
+
+    val lenovoid = groupList.getOrElse("lenovoid", List(""))
+    val cs_customerid = groupList.getOrElse("cs_customerid", List(""))
+    val microblogid = groupList.getOrElse("microblogid", List(""))
+    val wechatid = groupList.getOrElse("wechatid", List(""))
+    val mobile_md5 = groupList.getOrElse("mobile_md5", List(""))
+    val email = groupList.getOrElse("email", List(""))
+    val unique_cookie = groupList.getOrElse("unique_cookie", List(""))
+    val imei_num = groupList.getOrElse("imei_num", List(""))
+
+    val json =
+      (
+        ("lenovoid" -> lenovoid) ~
+          ("cs_customerid" -> cs_customerid) ~
+          ("microblogid" -> microblogid) ~
+          ("wechatid" -> wechatid) ~
+          ("mobile_md5" -> mobile_md5) ~
+          ("email" -> email) ~
+          ("unique_cookie" -> unique_cookie) ~
+          ("imei_num" -> imei_num)
+        )
+    compact(render(json))
   }
 
 }

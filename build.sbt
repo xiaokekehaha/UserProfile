@@ -19,5 +19,6 @@ libraryDependencies ++= Seq(
   "org.apache.spark" %% "spark-sql" % "2.0.2" ,
   "com.github.scopt" % "scopt_2.11" % "3.3.0",
   "org.apache.spark" %% "spark-mllib" % "2.0.2",
+  "org.json4s" % "json4s-native_2.11" % "3.5.0",
   "com.googlecode.combinatoricslib" % "combinatoricslib" % "2.1"
 )
