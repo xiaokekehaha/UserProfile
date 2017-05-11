@@ -3,7 +3,7 @@ package com.lenovo.persona.model
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{Row, SparkSession}
 import org.json4s._
-import org.json4s.native.JsonMethods._
+import org.json4s.jackson.JsonMethods._
 
 object Combination {
 
@@ -37,7 +37,8 @@ object Combination {
 
     hiveData.map( x => {
       val superid = x._1
-      val json = parse(x._2)
+      val json = x._2
+      val lenovoids = parse(json) \ "lenovoid" \\ classOf[JString]
     })
 
 

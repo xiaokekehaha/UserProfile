@@ -12,13 +12,24 @@ version := "1.0"
 
 scalaVersion := "2.11.8"
 
-jarName in assembly := "SparkLocal.jar"
+jarName in assembly := "userprofile.jar"
 
 libraryDependencies ++= Seq(
-  "org.apache.spark" %% "spark-core" % "2.0.2" ,
-  "org.apache.spark" %% "spark-sql" % "2.0.2" ,
+  "org.apache.spark" %% "spark-core" % "2.0.2" % "provided",
+  "org.apache.spark" %% "spark-sql" % "2.0.2" % "provided",
   "com.github.scopt" % "scopt_2.11" % "3.3.0",
-  "org.apache.spark" %% "spark-mllib" % "2.0.2",
-  "org.json4s" % "json4s-native_2.11" % "3.5.0",
+  "org.apache.spark" %% "spark-mllib" % "2.0.2" % "provided",
+//  "org.json4s" % "json4s-native_2.11" % "3.5.0" % "provided",
   "com.googlecode.combinatoricslib" % "combinatoricslib" % "2.1"
 )
+
+mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) => {
+  case "META-INF/maven/org.apache.avro/avro-ipc/pom.properties" => MergeStrategy.last
+  case "META-INF/maven/org.slf4j/slf4j-api/pom.properties" => MergeStrategy.last
+  case "META-INF/maven/org.slf4j/slf4j-api/pom.xml" => MergeStrategy.last
+  case PathList("javax", "inject", xs @ _*) => MergeStrategy.last
+  case PathList("org", "aopalliance", xs @ _*) => MergeStrategy.last
+  case PathList("org", "apache", xs @ _*) => MergeStrategy.last
+  case x => old(x)
+}
+}

@@ -23,14 +23,16 @@ package com.lenovo.persona.model
 
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.graphx.Graph
-import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.{Row, SQLContext, SparkSession}
 import org.paukov.combinatorics.Factory
 import org.json4s.JsonDSL._
-import org.json4s.native.JsonMethods._
+import org.json4s.jackson.JsonMethods._
 
 import scala.collection.JavaConverters._
 
 object Up2Hive {
+
+  case class Relation(super_id:String,relation:String)
 
   def main(args: Array[String]): Unit = {
 
@@ -40,6 +42,7 @@ object Up2Hive {
       .builder
       .appName(s"${this.getClass.getSimpleName}")
       .config("spark.sql.warehouse.dir", "/user/hive/071/warehouse")
+//      .config("spark.sql.warehouse.dir", "/user/hive/warehouse")
       .enableHiveSupport()
       .getOrCreate()
 
@@ -47,7 +50,7 @@ object Up2Hive {
 
     val sc = spark.sparkContext
 
-    spark.sql("use databaseName")
+    spark.sql("use d_lucp_dw")
 
     val hiveData = spark.sql("select lenovoid,cs_customerid,microblogid,wechatid,mobile_md5,email,unique_cookie,imei_num from lenovo_user_gain_data_rel").map {
       case Row(lenovoid: String, cs_customerid: String, microblogid: String
@@ -55,9 +58,11 @@ object Up2Hive {
       , imei_num: String) => (lenovoid, cs_customerid, microblogid, wechatid, mobile_md5, email, unique_cookie, imei_num)
     }.rdd
 
+//    println(hiveData.count())
+
     val data = hiveData
       .flatMap(x => {
-        val itr = List("lenovoid:" + x._1, "customid:" + x._2, "microblogid:" + x._3,
+        val itr = List("lenovoid:" + x._1, "cs_customerid:" + x._2, "microblogid:" + x._3,
           "wechatid:" + x._4, "mobile_md5:" + x._5, "email:" + x._6, "unique_cookie:" + x._7, "imei_num:" + x._8)
         val initialVector = Factory.createVector(itr.asJava)
         var index = 2
@@ -76,6 +81,11 @@ object Up2Hive {
         true
     })
 
+    println(data.count())
+//    data.saveAsTextFile("lenovorelation")
+
+
+    // (customid:120141101001791,1)
     val dic = data.flatMap(x => List(x._1, x._2)).zipWithUniqueId()
 
     val rowEdges = data.join(dic).map(_._2).join(dic).map(_._2)
@@ -94,7 +104,15 @@ object Up2Hive {
       (id, toJson(mes))
     })
 
+    println("the number of result:"+rr.count())
+
+    rr.toDF().createOrReplaceTempView("relation")
+    spark.sql("insert into super_v1 select * from relation")
+
+
+
     // Todo: Save???
+
 
   }
 
