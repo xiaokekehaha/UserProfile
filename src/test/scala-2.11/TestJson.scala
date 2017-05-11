@@ -11,11 +11,11 @@ object TestJson {
 
     // {"lenovoid":["10043464013","10034014344","10023124239","10026831311"],"cs_customerid":[""],"microblogid":[""],"wechatid":[""],"mobile_md5":[""],"email":[""],"unique_cookie":[""],"imei_num":[""]}
     val json = Up2Hive.toJson(a)
-//    println(json)
+    println(json)
 
     val lenovoid = parse(json) \ "email" \\ classOf[JString]
 
-    println(lenovoid(0) == "")
+//    println(lenovoid(0) == "")
 
 
 

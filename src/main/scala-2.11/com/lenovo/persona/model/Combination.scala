@@ -22,7 +22,7 @@ object Combination {
 
     val sc = spark.sparkContext
 
-    spark.sql("use databaseName")
+    spark.sql("use d_lucp_dw")
 
     val hiveData = spark.sql("select superid,json from table1").map {
       case Row(superid:String,json:String) => (superid,json)
