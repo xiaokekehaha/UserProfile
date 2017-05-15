@@ -17,9 +17,10 @@ jarName in assembly := "userprofile.jar"
 libraryDependencies ++= Seq(
   "org.apache.spark" %% "spark-core" % "2.0.2" % "provided",
   "org.apache.spark" %% "spark-sql" % "2.0.2" % "provided",
-  "com.github.scopt" % "scopt_2.11" % "3.3.0",
+  "org.apache.spark" %% "spark-hive" % "2.0.2" % "provided",
   "org.apache.spark" %% "spark-mllib" % "2.0.2" % "provided",
 //  "org.json4s" % "json4s-native_2.11" % "3.5.0" % "provided",
+  "com.github.scopt" % "scopt_2.11" % "3.3.0",
   "com.googlecode.combinatoricslib" % "combinatoricslib" % "2.1"
 )
 

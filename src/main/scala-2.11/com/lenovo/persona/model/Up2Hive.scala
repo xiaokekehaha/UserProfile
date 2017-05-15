@@ -22,11 +22,14 @@
 package com.lenovo.persona.model
 
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.graphx.Graph
-import org.apache.spark.sql.{Row, SQLContext, SparkSession}
+import org.apache.spark.sql.{Row, SQLContext}
 import org.paukov.combinatorics.Factory
 import org.json4s.JsonDSL._
 import org.json4s.jackson.JsonMethods._
+import org.apache.spark.sql.hive.HiveContext
+import org.apache.spark.sql.types.{StringType, StructField, StructType}
 
 import scala.collection.JavaConverters._
 
@@ -38,27 +41,57 @@ object Up2Hive {
 
     Logger.getLogger("org").setLevel(Level.OFF)
     // Creates a SparkSession.
-    val spark = SparkSession
-      .builder
-      .appName(s"${this.getClass.getSimpleName}")
-      .config("spark.sql.warehouse.dir", "/user/hive/071/warehouse")
-//      .config("spark.sql.warehouse.dir", "/user/hive/warehouse")
-      .enableHiveSupport()
-      .getOrCreate()
+//    val spark = SparkSession
+//      .builder
+//      .appName(s"${this.getClass.getSimpleName}")
+//      .config("spark.sql.warehouse.dir", "/user/hive/071/warehouse")
+//      .enableHiveSupport()
+//      .getOrCreate()
 
-    import spark.implicits._
+//    import spark.implicits._
+//
+//    val sc = spark.sparkContext
 
-    val sc = spark.sparkContext
+    println("1")
 
-    spark.sql("use d_lucp_dw")
+    val sparkConf = new SparkConf().setAppName("item_item")
+    val sc = new SparkContext(sparkConf)
+    val hiveContext = new HiveContext(sc)
+    val sqlContext=new SQLContext(sc)
+    import hiveContext.sql
 
-    val hiveData = spark.sql("select lenovoid,cs_customerid,microblogid,wechatid,mobile_md5,email,unique_cookie,imei_num from lenovo_user_gain_data_rel").map {
-      case Row(lenovoid: String, cs_customerid: String, microblogid: String
-      , wechatid: String, mobile_md5: String, email: String, unique_cookie: String
-      , imei_num: String) => (lenovoid, cs_customerid, microblogid, wechatid, mobile_md5, email, unique_cookie, imei_num)
-    }.rdd
 
-//    println(hiveData.count())
+    println("2")
+    sql("use d_lucp_dw")
+
+    println(3)
+
+
+//    val hiveData = sql("select lenovoid,cs_customerid,microblogid,wechatid,mobile_md5,email,unique_cookie,imei_num from lenovo_user_gain_data_rel").map {
+//      case Row(lenovoid: String, cs_customerid: String, microblogid: String
+//      , wechatid: String, mobile_md5: String, email: String, unique_cookie: String
+//      , imei_num: String) => (lenovoid, cs_customerid, microblogid, wechatid, mobile_md5, email, unique_cookie, imei_num)
+//    }.rdd
+
+
+//    val hiveData = sql("select lenovoid,cs_customerid,microblogid,wechatid,mobile_md5,email,unique_cookie,imei_num from lenovo_user_gain_data_rel").rdd.map( x => {
+//      val lenovoid = x.getAs[String]("lenovoid")
+//      val cs_customerid = x.getAs[String]("cs_customerid")
+//      val microblogid = x.getAs[String]("microblogid")
+//      val wechatid = x.getAs[String]("wechatid")
+//      val mobile_md5 = x.getAs[String]("mobile_md5")
+//      val email = x.getAs[String]("email")
+//      val unique_cookie = x.getAs[String]("unique_cookie")
+//      val imei_num = x.getAs[String]("imei_num")
+//      (lenovoid,cs_customerid,microblogid,wechatid,mobile_md5,email,unique_cookie,imei_num)
+//    })
+
+    val dtd = args(0)
+    val src = args(1)
+    val hiveData = sc.textFile(s"/user/hive/d_lucp_dw.db/user_relation")
+
+
+    println("number of source:" + hiveData.count())
 
     val data = hiveData
       .flatMap(x => {
@@ -102,12 +135,21 @@ object Up2Hive {
       val id = x._1
       val mes = x._2.toList.distinct
       (id, toJson(mes))
-    })
+    }).map( x => Row(x._1.toString,x._2))
+
+    val structType=StructType(Array(
+      StructField("super_id",StringType,true),
+      StructField("relation",StringType,true)
+    ))
 
     println("the number of result:"+rr.count())
 
-    rr.toDF().createOrReplaceTempView("relation")
-    spark.sql("insert into super_v1 select * from relation")
+    val a = sqlContext.createDataFrame(rr,structType)
+
+    a.createOrReplaceTempView("relation")
+
+//    rr.toDF().createOrReplaceTempView("relation")
+    sql("insert into super_v1 select * from relation")
 
 
 

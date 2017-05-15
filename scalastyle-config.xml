@@ -41,14 +41,26 @@ This file is divided into 3 sections:
   <name>Scalastyle standard configuration</name>
 
   <!-- ================================================================================ -->
-  <!--                               rules we enforce                                   -->
+  <!--                 This file is copying from Spark,enforce to rules                 -->
   <!-- ================================================================================ -->
 
   <check level="error" class="org.scalastyle.file.FileTabChecker" enabled="true"></check>
 
-  <check level="error" class="org.scalastyle.file.HeaderMatchesChecker" enabled="true">
+  <check level="error" class="org.scalastyle.file.HeaderMatchesChecker" enabled="false">
     <parameters>
-       <parameter name="header"><![CDATA[]]></parameter>
+       <parameter name="header"><![CDATA[/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */]]></parameter>
     </parameters>
   </check>
 
@@ -202,15 +214,16 @@ This file is divided into 3 sections:
     of Commons Lang 2 (package org.apache.commons.lang.*)</customMessage>
   </check>
 
-  <check level="error" class="org.scalastyle.scalariform.ImportOrderChecker" enabled="true">
-    <parameters>
-      <parameter name="groups">java,scala,3rdParty,spark</parameter>
-      <parameter name="group.java">javax?\..*</parameter>
-      <parameter name="group.scala">scala\..*</parameter>
-      <parameter name="group.3rdParty">(?!org\.apache\.spark\.).*</parameter>
-      <parameter name="group.spark">org\.apache\.spark\..*</parameter>
-    </parameters>
-  </check>
+  <!--<check level="error" class="org.scalastyle.scalariform.ImportOrderChecker" enabled="true">-->
+    <!--<parameters>-->
+      <!--<parameter name="groups">java,scala,3rdParty,spark</parameter>-->
+      <!--<parameter name="group.java">javax?\..*</parameter>-->
+      <!--<parameter name="group.scala">scala\..*</parameter>-->
+      <!--<parameter name="group.3rdParty">(?!org\.apache\.spark\.).*</parameter>-->
+      <!--<parameter name="group.spark">org\.apache\.spark\..*</parameter>-->
+    <!--</parameters>-->
+    <!--<customMessage>test some</customMessage>-->
+  <!--</check>-->
 
   <check level="error" class="org.scalastyle.scalariform.DisallowSpaceBeforeTokenChecker" enabled="true">
     <parameters>
