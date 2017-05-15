@@ -2,6 +2,9 @@ package com.lenovo.persona.utils
 
 import java.io.FileInputStream
 import java.util.Properties
+
+import org.apache.spark.SparkContext
+import org.apache.spark.rdd.RDD
 // import org.apache.commons.io.IOUtils
 // import org.apache.hadoop.fs.Path
 // import org.apache.spark.SparkContext
@@ -48,17 +51,19 @@ object ConfigUtils {
     } finally in.close()
   }
 
-  //  def deletePath(sc: SparkContext, path: String): Unit = {
-  //    val hdfs = org.apache.hadoop.fs.FileSystem.get(sc.hadoopConfiguration)
-  //    val hdfsPath = new org.apache.hadoop.fs.Path(path)
-  //    if (hdfs.exists(hdfsPath))
-  //      hdfs.delete(hdfsPath, true)
-  //  }
-  //
-  //  def overwriteTextFile[T](path: String, rdd: RDD[T]): Unit = {
-  //    deletePath(rdd.context, path)
-  //    rdd.saveAsTextFile(path)
-  //  }
+  def deletePath(sc: SparkContext, path: String): Unit = {
+    val hdfs = org.apache.hadoop.fs.FileSystem.get(sc.hadoopConfiguration)
+    val hdfsPath = new org.apache.hadoop.fs.Path(path)
+    if (hdfs.exists(hdfsPath)) {
+      hdfs.delete(hdfsPath, true)
+    }
+  }
+
+  def overwriteTextFile[T](path: String, rdd: RDD[T]): Unit = {
+    deletePath(rdd.context, path)
+    rdd.saveAsTextFile(path)
+  }
+
   //
   //  def writeSingleHFile(sc:SparkContext,inpath:String,outpath:String):Unit = {
   //    val hdfs = org.apache.hadoop.fs.FileSystem.get(sc.hadoopConfiguration)

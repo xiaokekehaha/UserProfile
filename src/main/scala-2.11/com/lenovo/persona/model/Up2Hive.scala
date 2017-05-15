@@ -21,6 +21,7 @@
 
 package com.lenovo.persona.model
 
+import com.lenovo.persona.utils.ConfigUtils
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.graphx.Graph
@@ -35,60 +36,66 @@ import scala.collection.JavaConverters._
 
 object Up2Hive {
 
-  case class Relation(super_id:String,relation:String)
+  case class Relation(super_id: String, relation: String)
 
   def main(args: Array[String]): Unit = {
 
-    Logger.getLogger("org").setLevel(Level.OFF)
+//    Logger.getLogger("org").setLevel(Level.OFF)
     // Creates a SparkSession.
-//    val spark = SparkSession
-//      .builder
-//      .appName(s"${this.getClass.getSimpleName}")
-//      .config("spark.sql.warehouse.dir", "/user/hive/071/warehouse")
-//      .enableHiveSupport()
-//      .getOrCreate()
+    //    val spark = SparkSession
+    //      .builder
+    //      .appName(s"${this.getClass.getSimpleName}")
+    //      .config("spark.sql.warehouse.dir", "/user/hive/071/warehouse")
+    //      .enableHiveSupport()
+    //      .getOrCreate()
 
-//    import spark.implicits._
-//
-//    val sc = spark.sparkContext
+    //    import spark.implicits._
+    //
+    //    val sc = spark.sparkContext
 
-    println("1")
 
-    val sparkConf = new SparkConf().setAppName("item_item")
+    val sparkConf = new SparkConf().setAppName("Fst_Step_Graph_Components")
     val sc = new SparkContext(sparkConf)
     val hiveContext = new HiveContext(sc)
-    val sqlContext=new SQLContext(sc)
+    val sqlContext = new SQLContext(sc)
     import hiveContext.sql
 
-
-    println("2")
     sql("use d_lucp_dw")
 
-    println(3)
+    //    val hiveData = sql("select lenovoid,cs_customerid,microblogid,wechatid,mobile_md5,email,unique_cookie,imei_num from lenovo_user_gain_data_rel").map {
+    //      case Row(lenovoid: String, cs_customerid: String, microblogid: String
+    //      , wechatid: String, mobile_md5: String, email: String, unique_cookie: String
+    //      , imei_num: String) => (lenovoid, cs_customerid, microblogid, wechatid, mobile_md5, email, unique_cookie, imei_num)
+    //    }.rdd
 
+    val hiveData = sql("select lenovoid,cs_customerid,microblogid,wechatid,mobile_md5,email,unique_cookie,imei_num,lps_did from user_realation").rdd.map(x => {
+      val lenovoid = x.getAs[String]("lenovoid")
+      val cs_customerid = x.getAs[String]("cs_customerid")
+      val microblogid = x.getAs[String]("microblogid")
+      val wechatid = x.getAs[String]("wechatid")
+      val mobile_md5 = x.getAs[String]("mobile_md5")
+      val email = x.getAs[String]("email")
+      val unique_cookie = x.getAs[String]("unique_cookie")
+      val imei_num = x.getAs[String]("imei_num")
+      val lps_did = x.getAs[String]("lps_did")
+      (lenovoid, cs_customerid, microblogid, wechatid, mobile_md5, email, unique_cookie, imei_num, lps_did)
+    })
 
-//    val hiveData = sql("select lenovoid,cs_customerid,microblogid,wechatid,mobile_md5,email,unique_cookie,imei_num from lenovo_user_gain_data_rel").map {
-//      case Row(lenovoid: String, cs_customerid: String, microblogid: String
-//      , wechatid: String, mobile_md5: String, email: String, unique_cookie: String
-//      , imei_num: String) => (lenovoid, cs_customerid, microblogid, wechatid, mobile_md5, email, unique_cookie, imei_num)
-//    }.rdd
-
-
-//    val hiveData = sql("select lenovoid,cs_customerid,microblogid,wechatid,mobile_md5,email,unique_cookie,imei_num from lenovo_user_gain_data_rel").rdd.map( x => {
-//      val lenovoid = x.getAs[String]("lenovoid")
-//      val cs_customerid = x.getAs[String]("cs_customerid")
-//      val microblogid = x.getAs[String]("microblogid")
-//      val wechatid = x.getAs[String]("wechatid")
-//      val mobile_md5 = x.getAs[String]("mobile_md5")
-//      val email = x.getAs[String]("email")
-//      val unique_cookie = x.getAs[String]("unique_cookie")
-//      val imei_num = x.getAs[String]("imei_num")
-//      (lenovoid,cs_customerid,microblogid,wechatid,mobile_md5,email,unique_cookie,imei_num)
-//    })
-
-    val dtd = args(0)
-    val src = args(1)
-    val hiveData = sc.textFile(s"/user/hive/d_lucp_dw.db/user_relation")
+    //    val dtd = args(0)
+    //    val src = args(1)
+//        val hiveData = sc.textFile("/user/hive/d_lucp_dw.db/user_realation").map(_.split("\001"))
+//          .map(x => {
+//            val lenovoid = x(0)
+//            val cs_customerid = x(1)
+//            val microblogid = x(2)
+//            val wechatid = x(3)
+//            val mobile_md5 = x(4)
+//            val email = x(5)
+//            val unique_cookie = x(6)
+//            val imei_num = x(7)
+//            val ips_did = x(8)
+//            (lenovoid, cs_customerid, microblogid, wechatid, mobile_md5, email, unique_cookie, imei_num, ips_did)
+//          })
 
 
     println("number of source:" + hiveData.count())
@@ -96,7 +103,7 @@ object Up2Hive {
     val data = hiveData
       .flatMap(x => {
         val itr = List("lenovoid:" + x._1, "cs_customerid:" + x._2, "microblogid:" + x._3,
-          "wechatid:" + x._4, "mobile_md5:" + x._5, "email:" + x._6, "unique_cookie:" + x._7, "imei_num:" + x._8)
+          "wechatid:" + x._4, "mobile_md5:" + x._5, "email:" + x._6, "unique_cookie:" + x._7, "imei_num:" + x._8, "lps_did:" + x._9)
         val initialVector = Factory.createVector(itr.asJava)
         var index = 2
         if (itr.length < 2) {
@@ -115,7 +122,7 @@ object Up2Hive {
     })
 
     println(data.count())
-//    data.saveAsTextFile("lenovorelation")
+    //    data.saveAsTextFile("lenovorelation")
 
 
     // (customid:120141101001791,1)
@@ -134,23 +141,26 @@ object Up2Hive {
     val rr = ccByUsername.map(x => (x._2, x._1)).groupByKey().map(x => {
       val id = x._1
       val mes = x._2.toList.distinct
-      (id, toJson(mes))
-    }).map( x => Row(x._1.toString,x._2))
+//      id + "\005" + toJson(mes)
+      (id,toJson(mes))
+    })
+          .map(x => Row(x._1.toString, x._2))
 
-    val structType=StructType(Array(
-      StructField("super_id",StringType,true),
-      StructField("relation",StringType,true)
-    ))
+        val structType = StructType(Array(
+          StructField("super_id", StringType, true),
+          StructField("relation", StringType, true)
+        ))
 
-    println("the number of result:"+rr.count())
+    println("the number of result:" + rr.count())
+    ConfigUtils.overwriteTextFile("/user/u_lucp_dw/user_graph", rr)
 
-    val a = sqlContext.createDataFrame(rr,structType)
+        val a = sqlContext.createDataFrame(rr,structType)
 
-    a.createOrReplaceTempView("relation")
+//          createDataFrame(rr, structType)
 
-//    rr.toDF().createOrReplaceTempView("relation")
-    sql("insert into super_v1 select * from relation")
-
+        a.registerTempTable("relation")
+//        rr.toDF().createOrReplaceTempView("relation")
+        sql("insert into super_v1 select * from relation")
 
 
     // Todo: Save???
@@ -179,6 +189,7 @@ object Up2Hive {
     val email = groupList.getOrElse("email", List(""))
     val unique_cookie = groupList.getOrElse("unique_cookie", List(""))
     val imei_num = groupList.getOrElse("imei_num", List(""))
+    val lps_did = groupList.getOrElse("lps_did", List(""))
 
     val json =
       (
@@ -189,7 +200,8 @@ object Up2Hive {
           ("mobile_md5" -> mobile_md5) ~
           ("email" -> email) ~
           ("unique_cookie" -> unique_cookie) ~
-          ("imei_num" -> imei_num)
+          ("imei_num" -> imei_num) ~
+          ("lps_did" -> lps_did)
         )
     compact(render(json))
   }
