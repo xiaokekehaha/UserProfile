@@ -1,15 +1,11 @@
+import com.lenovo.persona.utils.ConfigUtils
 
 object TestNull {
 
   def main(args: Array[String]): Unit = {
 
-    val a = "lenovoid:"+""
-
-    var b = 1
-
-    if(a.last == ':')
-      println("12313")
-
+    val configs = ConfigUtils.getConfig("/location.properties")
+    val url = configs.getOrElse("county", "")
   }
 
 }

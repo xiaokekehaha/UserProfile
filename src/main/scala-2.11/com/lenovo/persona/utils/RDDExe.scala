@@ -17,6 +17,14 @@ object RDDExe {
       accumulator
     }
 
+
+    def unionns(n:Int) = {
+      var accumulator = rdd
+      for (i <- 0 to n-1)
+        accumulator = accumulator.union(rdd)
+      accumulator
+    }
+
     def zipWithId():RDD[(Long,T)] = {
       rdd.zipWithUniqueId().map( x => (x._2,x._1))
     }

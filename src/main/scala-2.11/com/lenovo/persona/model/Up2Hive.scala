@@ -1,28 +1,9 @@
-/*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 // scalastyle:off
 
 // Todo: 需要将结果json化
 
 package com.lenovo.persona.model
 
-import com.lenovo.persona.utils.ConfigUtils
-import org.apache.log4j.{Level, Logger}
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.graphx.Graph
 import org.apache.spark.sql.{Row, SQLContext}
@@ -41,34 +22,22 @@ object Up2Hive {
   def main(args: Array[String]): Unit = {
 
 //    Logger.getLogger("org").setLevel(Level.OFF)
-    // Creates a SparkSession.
-    //    val spark = SparkSession
-    //      .builder
-    //      .appName(s"${this.getClass.getSimpleName}")
-    //      .config("spark.sql.warehouse.dir", "/user/hive/071/warehouse")
-    //      .enableHiveSupport()
-    //      .getOrCreate()
-
-    //    import spark.implicits._
-    //
-    //    val sc = spark.sparkContext
-
 
     val sparkConf = new SparkConf().setAppName("Fst_Step_Graph_Components")
     val sc = new SparkContext(sparkConf)
     val hiveContext = new HiveContext(sc)
-    val sqlContext = new SQLContext(sc)
+//    val sqlContext = new SQLContext(sc)
     import hiveContext.sql
 
     sql("use d_lucp_dw")
+//    sql("insert into log select 'program step1--init spark' from dual")
 
-    //    val hiveData = sql("select lenovoid,cs_customerid,microblogid,wechatid,mobile_md5,email,unique_cookie,imei_num from lenovo_user_gain_data_rel").map {
-    //      case Row(lenovoid: String, cs_customerid: String, microblogid: String
-    //      , wechatid: String, mobile_md5: String, email: String, unique_cookie: String
-    //      , imei_num: String) => (lenovoid, cs_customerid, microblogid, wechatid, mobile_md5, email, unique_cookie, imei_num)
-    //    }.rdd
+    sql("truncate table log")
+    sql("truncate table zy_row_edge")
 
-    val hiveData = sql("select lenovoid,cs_customerid,microblogid,wechatid,mobile_md5,email,unique_cookie,imei_num,lps_did from user_realation").rdd.map(x => {
+
+    var s1 = System.currentTimeMillis()
+    val hiveData_1 = sql("select lenovoid,cs_customerid,microblogid,wechatid,mobile_md5,email,unique_cookie,imei_num,lps_did from user_relation where src = 'cs' and src = 'cs_1'").rdd.map(x => {
       val lenovoid = x.getAs[String]("lenovoid")
       val cs_customerid = x.getAs[String]("cs_customerid")
       val microblogid = x.getAs[String]("microblogid")
@@ -81,24 +50,23 @@ object Up2Hive {
       (lenovoid, cs_customerid, microblogid, wechatid, mobile_md5, email, unique_cookie, imei_num, lps_did)
     })
 
-    //    val dtd = args(0)
-    //    val src = args(1)
-//        val hiveData = sc.textFile("/user/hive/d_lucp_dw.db/user_realation").map(_.split("\001"))
-//          .map(x => {
-//            val lenovoid = x(0)
-//            val cs_customerid = x(1)
-//            val microblogid = x(2)
-//            val wechatid = x(3)
-//            val mobile_md5 = x(4)
-//            val email = x(5)
-//            val unique_cookie = x(6)
-//            val imei_num = x(7)
-//            val ips_did = x(8)
-//            (lenovoid, cs_customerid, microblogid, wechatid, mobile_md5, email, unique_cookie, imei_num, ips_did)
-//          })
+    val hiveData_2 = sql("select lenovoid,cs_customerid,microblogid,wechatid,mobile_md5,email,unique_cookie,imei_num,lps_did from hhl_shop_rel").rdd.map(x => {
+      val lenovoid = x.getAs[String]("lenovoid")
+      val cs_customerid = x.getAs[String]("cs_customerid")
+      val microblogid = x.getAs[String]("microblogid")
+      val wechatid = x.getAs[String]("wechatid")
+      val mobile_md5 = x.getAs[String]("mobile_md5")
+      val email = x.getAs[String]("email")
+      val unique_cookie = x.getAs[String]("unique_cookie")
+      val imei_num = x.getAs[String]("imei_num")
+      val lps_did = x.getAs[String]("lps_did")
+      (lenovoid, cs_customerid, microblogid, wechatid, mobile_md5, email, unique_cookie, imei_num, lps_did)
+    })
 
+    val hiveData = hiveData_1 union hiveData_2
 
-    println("number of source:" + hiveData.count())
+//    val hiveCount = hiveData.count()
+//    sql(s"insert into log select 'hive-count:$hiveCount' from dual")
 
     val data = hiveData
       .flatMap(x => {
@@ -119,48 +87,85 @@ object Up2Hive {
         false
       else
         true
-    })
+    }).cache()
+//    println("22relation:" + (System.currentTimeMillis() - s1))
 
-    println(data.count())
-    //    data.saveAsTextFile("lenovorelation")
+//    val dataCount = data.count()
+//    sql(s"insert into log select 'data-count:$dataCount' from dual")
+
+    s1 = System.currentTimeMillis()
+    val dic = data.flatMap(x => List(x._1, x._2)).distinct().zipWithUniqueId().cache()
+//    println("dic************:" + (System.currentTimeMillis() - s1))
 
 
-    // (customid:120141101001791,1)
-    val dic = data.flatMap(x => List(x._1, x._2)).zipWithUniqueId()
+//    ConfigUtils.overwriteTextFile("diccccc",dic)
+//    sql(s"insert into log select 'dic-created' from dual")
 
-    val rowEdges = data.join(dic).map(_._2).join(dic).map(_._2)
+    s1 = System.currentTimeMillis()
+    val rowEdges = data.join(dic).map(_._2).join(dic).map(_._2).map( x => {
+      if(x._1 > x._2)
+        x.swap
+      else
+        x
+    }).distinct()
+//    println("rowEdge************:" + (System.currentTimeMillis() - s1))
 
+    // cun yixia bian
+    val structType2 = StructType(Array(
+      StructField("edge1", StringType, true),
+      StructField("edge2", StringType, true)
+    ))
+//
+    val b = hiveContext.createDataFrame(rowEdges.map(x => Row(x._1.toString, x._2.toString)),structType2)
+    b.show()
+    b.registerTempTable("row")
+    sql("insert into zy_row_edge select * from row")
+
+    sql(s"insert into log select 'dropTempTable' from dual")
+    hiveContext.dropTempTable("row")
+
+//    sql(s"insert into log select 'start-graph' from dual")
+
+
+    s1 = System.currentTimeMillis()
     val graph = Graph.fromEdgeTuples(rowEdges, 1)
+    println("造图************:" + (System.currentTimeMillis() - s1))
 
+//    sql(s"insert into log select 'connectedComponents' from dual")
+    s1 = System.currentTimeMillis()
     val cc = graph.connectedComponents().vertices
+    println("生成子图************:" + (System.currentTimeMillis() - s1))
 
+//    sql(s"insert into log select 'step122' from dual")
     val ccByUsername = dic.map(_.swap).join(cc).map {
       case (id, (username, cc)) => (username, cc)
     }
 
+//    sql(s"insert into log select 'step123' from dual")
+
+    s1 = System.currentTimeMillis()
     val rr = ccByUsername.map(x => (x._2, x._1)).groupByKey().map(x => {
       val id = x._1
       val mes = x._2.toList.distinct
 //      id + "\005" + toJson(mes)
       (id,toJson(mes))
-    })
-          .map(x => Row(x._1.toString, x._2))
+    }).map(x => Row(x._1.toString, x._2.toString))
 
+//    sql(s"insert into log select 'step124' from dual")
         val structType = StructType(Array(
           StructField("super_id", StringType, true),
           StructField("relation", StringType, true)
         ))
 
-    println("the number of result:" + rr.count())
-    ConfigUtils.overwriteTextFile("/user/u_lucp_dw/user_graph", rr)
 
-        val a = sqlContext.createDataFrame(rr,structType)
+        val a = hiveContext.createDataFrame(rr,structType)
 
-//          createDataFrame(rr, structType)
-
-        a.registerTempTable("relation")
+        a.registerTempTable("wasd")
+//    sql(s"insert into log select 'step126' from dual")
 //        rr.toDF().createOrReplaceTempView("relation")
-        sql("insert into super_v1 select * from relation")
+    sql("insert into super_v1 select * from wasd")
+    println("结果保存************:" + (System.currentTimeMillis() - s1))
+//    sql(s"insert into log select 'step127' from dual")
 
 
     // Todo: Save???
