@@ -1,6 +1,6 @@
 package com.lenovo.persona.utils
 
-import java.io.FileInputStream
+import java.io.{FileInputStream, InputStreamReader}
 import java.util.Properties
 
 import org.apache.spark.SparkContext
@@ -34,7 +34,7 @@ object ConfigUtils {
   // get property's message from resources folder
   def getConfig(path: String): scala.collection.mutable.Map[String, String] = {
     val prop = new Properties()
-    val inputStream = getClass().getResourceAsStream(path)
+    val inputStream = new InputStreamReader(getClass().getResourceAsStream(path), "UTF-8")
     try {
       prop.load(inputStream)
       propertiesAsScalaMapConverter(prop).asScala

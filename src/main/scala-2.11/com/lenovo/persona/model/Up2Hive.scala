@@ -136,8 +136,15 @@ object Up2Hive {
     val cc = graph.connectedComponents().vertices
     println("生成子图************:" + (System.currentTimeMillis() - s1))
 
+    val tmp = cc.map( x => (x._1.toLong,x._2.toLong))
+    val tt = tmp.join(dic.map(_.swap))
+      .map(_._2)
+
+
+
 //    sql(s"insert into log select 'step122' from dual")
-    val ccByUsername = dic.map(_.swap).join(cc).map {
+    val ccByUsername = dic.map(_.swap).join(cc)
+      .map {
       case (id, (username, cc)) => (username, cc)
     }
 
@@ -157,7 +164,6 @@ object Up2Hive {
           StructField("relation", StringType, true)
         ))
 
-
         val a = hiveContext.createDataFrame(rr,structType)
 
         a.registerTempTable("wasd")
@@ -167,14 +173,10 @@ object Up2Hive {
     println("结果保存************:" + (System.currentTimeMillis() - s1))
 //    sql(s"insert into log select 'step127' from dual")
 
-
     // Todo: Save???
-
-
   }
 
   def toJson(list: List[String]): String = {
-
     val groupList = list.map(x => {
       val tup = x.split(":")
       val id = tup(0)
