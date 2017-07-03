@@ -39,5 +39,5 @@ create table user_relation (
   src    string,
   dtd    string
 )
-ROW FORMAT DELIMITED FIELDS TERMINATED BY '\001'
+ROW FORMAT DELIMITED FIELDS TERMINATED BY '\005'
 STORED AS TEXTFILE;

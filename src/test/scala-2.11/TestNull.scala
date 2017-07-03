@@ -8,32 +8,14 @@ object TestNull {
 
   def main(args: Array[String]): Unit = {
 
-    //    val configs = ConfigUtils.getConfig("/location.properties")
-    //    val url = configs.getOrElse("county", "")
 
+   val a = "qweqeiqueiu6"
+    val a1 = a.substring(0,a.size-1)
+    val a2 = a.substring(a.size-1)
 
-    //    val a = "20160909"
-    //    val b = "0000000055d5"
-    //
-    //
-    //    println(b.hashCode)
-    //
-    ////    println(dateTrans(a))
-    //  }
-    //
-    //
-    //  def dateTrans(src: String): String = {
-    //    val spdf = new SimpleDateFormat("yyyyMMdd")
-    //    val date = spdf.parse(src)
-    //    val spdf2 = new SimpleDateFormat("yyyy-MM-dd")
-    //    spdf2.format(date)
-    //  }
+    println(a1)
+    println(a2)
 
-    val cityMap = ConfigUtils.getConfig("/city.properties")
-    val a = "太原市"
-    val aa = cityMap.getOrElse(a,0)
-    println(aa.toString.toInt)
-//    cityMap.foreach(println)
 
   }
 }

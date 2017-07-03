@@ -5,7 +5,7 @@ package com.lenovo.persona.model.labelrdd
 import java.io.{File, PrintWriter}
 
 import org.json4s.JsonDSL._
-import org.json4s.jackson.JsonMethods._
+import org.json4s.native.JsonMethods._
 
 object DIc {
 
