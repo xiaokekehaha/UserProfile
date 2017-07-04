@@ -1,8 +1,10 @@
 package com.lenovo.persona.json
 
-class WL(weight: String, label: String) {
+class WL() {
 
-  val a = weight
-  val b = label
+  var weight = ""
+  var label = ""
+
+  override def toString: String = label + "_" + weight
 
 }
